@@ -1,0 +1,82 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class InitialSchema1770387624115 implements MigrationInterface {
+    name = 'InitialSchema1770387624115'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TABLE "branches" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "address" character varying, "hotelId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_7f37d3b42defea97f1df0d19535" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "hotels" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "subscription_plan" character varying NOT NULL DEFAULT 'basic', "status" character varying NOT NULL DEFAULT 'active', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_2bb06797684115a1ba7c705fc7b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "roles" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_648e3f5447f725579d7d4ffdfb7" UNIQUE ("name"), CONSTRAINT "PK_c1433d71a4838793a49dcad46ab" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "users" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "phone" character varying NOT NULL, "password" character varying NOT NULL, "hotelId" integer NOT NULL, "branchId" integer, "roleId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_a000cca60bcf04454e727699490" UNIQUE ("phone"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "categories" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying, "isActive" boolean NOT NULL DEFAULT true, "hotelId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_24dbc6126a28ff948da33e97d3b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "menu_variants" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "price" numeric(10,2) NOT NULL, "menuItemId" integer NOT NULL, CONSTRAINT "PK_9531a0fd72e367b758bda95b103" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "menu_items" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying, "price" numeric(10,2) NOT NULL, "isAvailable" boolean NOT NULL DEFAULT true, "type" character varying NOT NULL, "imageUrl" character varying, "categoryId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_57e6188f929e5dc6919168620c8" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "order_items" ("id" SERIAL NOT NULL, "orderId" integer NOT NULL, "menuItemId" integer NOT NULL, "variantId" integer, "quantity" integer NOT NULL, "price" numeric(10,2) NOT NULL, CONSTRAINT "PK_005269d8574e6fac0493715c308" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "orders" ("id" SERIAL NOT NULL, "branchId" integer NOT NULL, "tableId" integer, "status" character varying NOT NULL DEFAULT 'PENDING', "source" character varying NOT NULL DEFAULT 'CAPTAIN', "total" numeric(10,2) NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_710e2d4957aa5878dfe94e4ac2f" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "tables" ("id" SERIAL NOT NULL, "tableNumber" character varying NOT NULL, "branchId" integer NOT NULL, "capacity" integer, "qrCode" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_c52ef3b2612bd555e91e652a71d" UNIQUE ("qrCode"), CONSTRAINT "PK_7cf2aca7af9550742f855d4eb69" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "suppliers" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "contact" character varying, "branchId" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b70ac51766a9e3144f778cfe81e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "ingredients" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "branchId" integer NOT NULL, "stockQty" numeric(10,2) NOT NULL DEFAULT '0', "unit" character varying NOT NULL DEFAULT 'kg', "lowStockThreshold" numeric(10,2) NOT NULL DEFAULT '5', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9240185c8a5507251c9f15e0649" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "recipes" ("id" SERIAL NOT NULL, "menuItemId" integer NOT NULL, "ingredientId" integer NOT NULL, "qtyRequired" numeric(10,2) NOT NULL, CONSTRAINT "PK_8f09680a51bf3669c1598a21682" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "audit_logs" ("id" SERIAL NOT NULL, "userId" integer, "branchId" integer, "action" character varying NOT NULL, "details" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "bills" ("id" SERIAL NOT NULL, "orderId" integer NOT NULL, "total" numeric(10,2) NOT NULL, "tax" numeric(10,2) NOT NULL DEFAULT '0', "discount" numeric(10,2) NOT NULL DEFAULT '0', "grandTotal" numeric(10,2) NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "REL_8b07afbe724f329c2a65c387c3" UNIQUE ("orderId"), CONSTRAINT "PK_a56215dfcb525755ec832cc80b7" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "payments" ("id" SERIAL NOT NULL, "billId" integer NOT NULL, "method" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "status" character varying NOT NULL DEFAULT 'SUCCESS', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`ALTER TABLE "branches" ADD CONSTRAINT "FK_a815598c30c91fe1ea4ab5e3611" FOREIGN KEY ("hotelId") REFERENCES "hotels"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_ba55c97cf1bcb6490cc597e241b" FOREIGN KEY ("hotelId") REFERENCES "hotels"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_246426dfd001466a1d5e47322f4" FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "users" ADD CONSTRAINT "FK_368e146b785b574f42ae9e53d5e" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "categories" ADD CONSTRAINT "FK_0aae1fb4cae1f900bb1d3daf53b" FOREIGN KEY ("hotelId") REFERENCES "hotels"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "menu_variants" ADD CONSTRAINT "FK_e4d60ad79fb8aa2a2911b21f6e5" FOREIGN KEY ("menuItemId") REFERENCES "menu_items"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "menu_items" ADD CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96" FOREIGN KEY ("categoryId") REFERENCES "categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "order_items" ADD CONSTRAINT "FK_f1d359a55923bb45b057fbdab0d" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "order_items" ADD CONSTRAINT "FK_d8453d5a71e525d9b406c35aab8" FOREIGN KEY ("menuItemId") REFERENCES "menu_items"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "order_items" ADD CONSTRAINT "FK_516736b9807228bb17b2d0a3e2a" FOREIGN KEY ("variantId") REFERENCES "menu_variants"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "orders" ADD CONSTRAINT "FK_873d9661d948ee484150cf4c73d" FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "orders" ADD CONSTRAINT "FK_2a7fdd7af437285a3ef0fc8b64f" FOREIGN KEY ("tableId") REFERENCES "tables"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "tables" ADD CONSTRAINT "FK_9b08619b41dc6f882cf492be815" FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "suppliers" ADD CONSTRAINT "FK_73b60b22f5ec246f8416c9b7211" FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "ingredients" ADD CONSTRAINT "FK_038f1f210c3e04b4a0acc1dc2f2" FOREIGN KEY ("branchId") REFERENCES "branches"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "recipes" ADD CONSTRAINT "FK_6a5fe40a53d3fe478bfc7a77f0b" FOREIGN KEY ("menuItemId") REFERENCES "menu_items"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "recipes" ADD CONSTRAINT "FK_9ec0120c33a1c546fe5ae7e004b" FOREIGN KEY ("ingredientId") REFERENCES "ingredients"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "bills" ADD CONSTRAINT "FK_8b07afbe724f329c2a65c387c31" FOREIGN KEY ("orderId") REFERENCES "orders"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "payments" ADD CONSTRAINT "FK_566f88b54bf6a0f477b14e8daa5" FOREIGN KEY ("billId") REFERENCES "bills"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "payments" DROP CONSTRAINT "FK_566f88b54bf6a0f477b14e8daa5"`);
+        await queryRunner.query(`ALTER TABLE "bills" DROP CONSTRAINT "FK_8b07afbe724f329c2a65c387c31"`);
+        await queryRunner.query(`ALTER TABLE "recipes" DROP CONSTRAINT "FK_9ec0120c33a1c546fe5ae7e004b"`);
+        await queryRunner.query(`ALTER TABLE "recipes" DROP CONSTRAINT "FK_6a5fe40a53d3fe478bfc7a77f0b"`);
+        await queryRunner.query(`ALTER TABLE "ingredients" DROP CONSTRAINT "FK_038f1f210c3e04b4a0acc1dc2f2"`);
+        await queryRunner.query(`ALTER TABLE "suppliers" DROP CONSTRAINT "FK_73b60b22f5ec246f8416c9b7211"`);
+        await queryRunner.query(`ALTER TABLE "tables" DROP CONSTRAINT "FK_9b08619b41dc6f882cf492be815"`);
+        await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT "FK_2a7fdd7af437285a3ef0fc8b64f"`);
+        await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT "FK_873d9661d948ee484150cf4c73d"`);
+        await queryRunner.query(`ALTER TABLE "order_items" DROP CONSTRAINT "FK_516736b9807228bb17b2d0a3e2a"`);
+        await queryRunner.query(`ALTER TABLE "order_items" DROP CONSTRAINT "FK_d8453d5a71e525d9b406c35aab8"`);
+        await queryRunner.query(`ALTER TABLE "order_items" DROP CONSTRAINT "FK_f1d359a55923bb45b057fbdab0d"`);
+        await queryRunner.query(`ALTER TABLE "menu_items" DROP CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96"`);
+        await queryRunner.query(`ALTER TABLE "menu_variants" DROP CONSTRAINT "FK_e4d60ad79fb8aa2a2911b21f6e5"`);
+        await queryRunner.query(`ALTER TABLE "categories" DROP CONSTRAINT "FK_0aae1fb4cae1f900bb1d3daf53b"`);
+        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_368e146b785b574f42ae9e53d5e"`);
+        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_246426dfd001466a1d5e47322f4"`);
+        await queryRunner.query(`ALTER TABLE "users" DROP CONSTRAINT "FK_ba55c97cf1bcb6490cc597e241b"`);
+        await queryRunner.query(`ALTER TABLE "branches" DROP CONSTRAINT "FK_a815598c30c91fe1ea4ab5e3611"`);
+        await queryRunner.query(`DROP TABLE "payments"`);
+        await queryRunner.query(`DROP TABLE "bills"`);
+        await queryRunner.query(`DROP TABLE "audit_logs"`);
+        await queryRunner.query(`DROP TABLE "recipes"`);
+        await queryRunner.query(`DROP TABLE "ingredients"`);
+        await queryRunner.query(`DROP TABLE "suppliers"`);
+        await queryRunner.query(`DROP TABLE "tables"`);
+        await queryRunner.query(`DROP TABLE "orders"`);
+        await queryRunner.query(`DROP TABLE "order_items"`);
+        await queryRunner.query(`DROP TABLE "menu_items"`);
+        await queryRunner.query(`DROP TABLE "menu_variants"`);
+        await queryRunner.query(`DROP TABLE "categories"`);
+        await queryRunner.query(`DROP TABLE "users"`);
+        await queryRunner.query(`DROP TABLE "roles"`);
+        await queryRunner.query(`DROP TABLE "hotels"`);
+        await queryRunner.query(`DROP TABLE "branches"`);
+    }
+
+}

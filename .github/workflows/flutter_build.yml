@@ -1,0 +1,75 @@
+name: Build Flutter APKs
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-apks:
+    name: Build APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      # --- Captain App ---
+      - name: Captain App - Get Dependencies
+        working-directory: ./mobile/captain_app
+        run: flutter pub get
+
+      - name: Captain App - Build APK
+        working-directory: ./mobile/captain_app
+        run: flutter build apk --release
+
+      - name: Upload Captain App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: captain-app-release
+          path: mobile/captain_app/build/app/outputs/flutter-apk/app-release.apk
+
+      # --- Customer App ---
+      - name: Customer App - Get Dependencies
+        working-directory: ./mobile/customer_app
+        run: flutter pub get
+
+      - name: Customer App - Build APK
+        working-directory: ./mobile/customer_app
+        run: flutter build apk --release
+
+      - name: Upload Customer App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: customer-app-release
+          path: mobile/customer_app/build/app/outputs/flutter-apk/app-release.apk
+
+      # --- Admin App ---
+      - name: Admin App - Get Dependencies
+        working-directory: ./mobile/admin_app
+        run: flutter pub get
+
+      - name: Admin App - Build APK
+        working-directory: ./mobile/admin_app
+        run: flutter build apk --release
+
+      - name: Upload Admin App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-app-release
+          path: mobile/admin_app/build/app/outputs/flutter-apk/app-release.apk
